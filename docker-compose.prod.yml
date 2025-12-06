@@ -1,0 +1,115 @@
+services:
+  # NGINX reverse proxy handled by nginx-proxy/nginx-proxy and companion - Not included in this file
+
+  ctfd:
+    image: ghcr.io/ctfpilot/ctfd:latest
+    restart: unless-stopped
+    expose:
+      - 8000
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-demo}
+
+      # Storage
+      - UPLOAD_FOLDER=/var/uploads
+      - DATABASE_URL=mysql+pymysql://${DB_USERNAME:-ctfd}:${DB_PASSWORD:-ctfd}@${DB_HOST:-db}:${DB_PORT:-3306}/${DB_NAME:-ctfd}
+      - REDIS_URL=redis://${REDIS_HOST:-cache}:${REDIS_PORT:-6379}
+      - WORKERS=${WORKERS:-1}
+      - LOG_FOLDER=/var/log/CTFd
+      - ACCESS_LOG=-
+      - ERROR_LOG=-
+      - REVERSE_PROXY=${REVERSE_PROXY:-true}
+
+      # First blood plugin
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      - DISCORD_WEBHOOK_LIMIT=1
+      - "DISCORD_WEBHOOK_MESSAGE=:drop_of_blood: First blood for **{challenge}** goes to **{user}**! :drop_of_blood:"
+      - DISCORD_WEBHOOK_CHALL=
+
+      # Development
+      - TEMPLATES_AUTO_RELOAD=${TEMPLATES_AUTO_RELOAD:-true}
+
+      # Kube-CTF
+      - KUBECTF_HOST=$KUBECTF_HOST
+      - KUBECTF_SECRET=$KUBECTF_SECRET
+
+      # Storage
+      - UPLOAD_PROVIDER="s3"
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET:-}
+      - AWS_S3_REGION=${AWS_S3_REGION:-}
+      - AWS_S3_ENDPOINT_URL=${AWS_S3_ENDPOINT_URL:-}
+      - AWS_S3_CUSTOM_PREFIX=${AWS_S3_CUSTOM_PREFIX:-}
+
+      # NGINX reverse proxy
+      - VIRTUAL_HOST=${DOMAIN}
+      - VIRTUAL_PORT=8000
+      - LETSENCRYPT_HOST=${DOMAIN}
+      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
+    volumes:
+      - .data/CTFd/logs:/var/log/CTFd
+      - .data/CTFd/uploads:/var/uploads
+    depends_on:
+      - db
+    networks:
+      internal:
+      nginx-proxy:
+
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      MARIADB_USER: ${DB_USERNAME:-ctfd}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-ctfd}
+      MARIADB_DATABASE: ${DB_NAME:-ctfd}
+      MARIADB_AUTO_UPGRADE: 1
+
+    volumes:
+      - .data/mysql:/var/lib/mysql
+    networks:
+      internal:
+      db:
+    command:
+      [
+        --character-set-server=utf8mb4,
+        --collation-server=utf8mb4_unicode_ci,
+        --wait_timeout=28800,
+        --log-warnings=0,
+      ]
+
+  db-cron-backup:
+    image: fradelg/mysql-cron-backup
+    restart: unless-stopped
+    # command: "/restore.sh /backup/latest.x.sql.gz" # This cannot restore mariadb-operator backups from CTFp
+    depends_on:
+      - db
+    volumes:
+      - .data/backup:/backup
+    environment:
+      - MYSQL_HOST=db
+      - MYSQL_USER=root
+      - MYSQL_PASS=${DB_ROOT_PASSWORD:-root}
+      - MAX_BACKUPS=40
+      - INIT_BACKUP=1
+      # Every day at 23:00
+      - CRON_TIME=0 23 * * *
+      # Make it small
+      - GZIP_LEVEL=9
+      - TZ=${TIMEZONE}
+    networks:
+      db:
+
+  cache:
+    image: redis:4
+    restart: unless-stopped
+    volumes:
+      - .data/redis:/data
+    networks:
+      internal:
+
+networks:
+  internal:
+  db:
+  nginx-proxy:
+    external: true
