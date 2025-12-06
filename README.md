@@ -1,13 +1,7 @@
-# CTF Pilot's Template Repository
+# CTF Pilot's CTFd configuration
 
-## Template information
-
-This repository, is a template repository for open-source projects within CTF Pilot.
-
-It provices a EUPL-1.2 License, release system and other standard files.
-
-Please remove this section, and replace with relevant information.  
-Replace `<repository-name>` with the repository name in `.github/workflows/cla-assistant.yml`and `.github/workflows/release.yml`.
+This repository contains CTF Pilot's configuration files for [CTFd](https://ctfd.io).  
+This includes deployment configurations, plugins and other customizations, customized to be used within the CTF Pilot ecosystem.
 
 ## Contributing
 
