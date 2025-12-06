@@ -18,11 +18,16 @@ spec:
     type: RollingUpdate
   selector:
     matchLabels:
-      name: ctfd
+      app.kubernetes.io/name: ctfd
+      ctfpilot.com/component: ctfd
   template:
     metadata:
       labels:
-        name: ctfd
+        app.kubernetes.io/part-of: ctfpilot
+        app.kubernetes.io/name: ctfd
+        app.kubernetes.io/version: { .Version }
+        app.kubernetes.io/component: scoreboard
+        ctfpilot.com/component: ctfd
     spec:
       containers:
         - image: ghcr.io/ctfpilot/ctfd:{ .Version }
@@ -30,11 +35,11 @@ spec:
           name: ctfd
           resources:
             requests:
-              cpu: "500m"
-              memory: "2Gi"
+              cpu: "100m"
+              memory: "1Gi"
             limits:
               cpu: "2000m"
-              memory: "8Gi"
+              memory: "4Gi"
           livenessProbe:
             httpGet:
               path: /healthcheck

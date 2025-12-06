@@ -15,14 +15,24 @@ This configuration currently runs on CTFd version `3.7.7`.
 2. If the plugin is a Github repo, add it as a submodule:
    ```bash
    git submodule add <repository-url> plugins/<plugin-name>
-    ```
+   ```
 3. If the plugin is not a Github repo, copy the plugin files into the new directory.
 4. Add the plugin to the `plugins/__init__.py` file:
-5. ```python
+   ```python
    from .<plugin-name> import <PluginClass>
    ```
 
 The Dockerfile will automatically copy all plugins from the `plugins` directory into the Docker image.
+
+### How to add a new CTFd theme
+
+If the theme is a Github repo, add it as a submodule:
+
+```bash
+git submodule add <repository-url> themes/<plugin-name>
+```
+
+If the theme is not a Github repo, copy the theme files into the `themes` directory, such that is structured like `themes/<theme-name>/...`.
 
 ## Contributing
 

@@ -5,7 +5,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: ctfpilot
     app.kubernetes.io/name: ctfd
-    app.kubernetes.io/version: 1.0.0
+    app.kubernetes.io/version: 1.0.1-r.2
     app.kubernetes.io/component: scoreboard
     ctfpilot.com/component: ctfd
 spec:
@@ -18,23 +18,28 @@ spec:
     type: RollingUpdate
   selector:
     matchLabels:
-      name: ctfd
+      app.kubernetes.io/name: ctfd
+      ctfpilot.com/component: ctfd
   template:
     metadata:
       labels:
-        name: ctfd
+        app.kubernetes.io/part-of: ctfpilot
+        app.kubernetes.io/name: ctfd
+        app.kubernetes.io/version: 1.0.1-r.2
+        app.kubernetes.io/component: scoreboard
+        ctfpilot.com/component: ctfd
     spec:
       containers:
-        - image: ghcr.io/ctfpilot/ctfd:1.0.0
+        - image: ghcr.io/ctfpilot/ctfd:1.0.1-r.2
           imagePullPolicy: Always
           name: ctfd
           resources:
             requests:
-              cpu: "500m"
-              memory: "2Gi"
+              cpu: "100m"
+              memory: "1Gi"
             limits:
               cpu: "2000m"
-              memory: "8Gi"
+              memory: "4Gi"
           livenessProbe:
             httpGet:
               path: /healthcheck
@@ -206,7 +211,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: ctfpilot
     app.kubernetes.io/name: ctfd
-    app.kubernetes.io/version: 1.0.0
+    app.kubernetes.io/version: 1.0.1-r.2
     app.kubernetes.io/component: scoreboard
     ctfpilot.com/component: ctfd
 spec:
