@@ -15,10 +15,10 @@ This configuration currently runs on CTFd version `3.7.7`.
 2. If the plugin is a Github repo, add it as a submodule:
    ```bash
    git submodule add <repository-url> plugins/<plugin-name>
-    ```
+   ```
 3. If the plugin is not a Github repo, copy the plugin files into the new directory.
 4. Add the plugin to the `plugins/__init__.py` file:
-5. ```python
+   ```python
    from .<plugin-name> import <PluginClass>
    ```
 

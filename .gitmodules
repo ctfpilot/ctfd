@@ -1,11 +1,11 @@
 [submodule "plugins/dynamic_challenges_mod"]
-path = plugins/dynamic_challenges_mod
-url = https://github.com/sigpwny/ctfd-dynamic-challenges-mod
+	path = plugins/dynamic_challenges_mod
+	url = https://github.com/sigpwny/ctfd-dynamic-challenges-mod
 
 [submodule "plugins/kubectf-plugin"]
-path = plugins/kubectf-plugin
-url = https://github.com/ctfpilot/ctfd-kubectf-plugin
+	path = plugins/kubectf-plugin
+	url = https://github.com/ctfpilot/ctfd-kubectf-plugin
 
 [submodule "plugins/ctfd-discord-webhook-plugin"]
-path = plugins/ctfd-discord-webhook-plugin
-url = https://github.com/sigpwny/ctfd-discord-webhook-plugin
+	path = plugins/ctfd-discord-webhook-plugin
+	url = https://github.com/sigpwny/ctfd-discord-webhook-plugin
