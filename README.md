@@ -3,6 +3,27 @@
 This repository contains CTF Pilot's configuration files for [CTFd](https://ctfd.io).  
 This includes deployment configurations, plugins and other customizations, customized to be used within the CTF Pilot ecosystem.
 
+## CTFd Version
+
+This configuration currently runs on CTFd version `3.7.7`.
+
+## Guides
+
+### How to add new CTFd plugins
+
+1. Create a new directory for your plugin in the `plugins` directory.
+2. If the plugin is a Github repo, add it as a submodule:
+   ```bash
+   git submodule add <repository-url> plugins/<plugin-name>
+    ```
+3. If the plugin is not a Github repo, copy the plugin files into the new directory.
+4. Add the plugin to the `plugins/__init__.py` file:
+5. ```python
+   from .<plugin-name> import <PluginClass>
+   ```
+
+The Dockerfile will automatically copy all plugins from the `plugins` directory into the Docker image.
+
 ## Contributing
 
 We welcome contributions of all kinds, from **code** and **documentation** to **bug reports** and **feedback**!
