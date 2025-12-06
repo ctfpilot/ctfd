@@ -1,0 +1,90 @@
+services:
+  ctfd:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        - DEVELOPMENT=${DEVELOPMENT:-true}
+    user: root
+    restart: always
+    expose:
+      - 8000
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-demo}
+      - UPLOAD_FOLDER=/var/uploads
+      - DATABASE_URL=mysql+pymysql://${DB_USERNAME:-ctfd}:${DB_PASSWORD:-ctfd}@${DB_HOST:-db}:${DB_PORT:-3306}/${DB_NAME:-ctfd}
+      - REDIS_URL=redis://${REDIS_HOST:-cache}:${REDIS_PORT:-6379}
+      - WORKERS=${WORKERS:-1}
+      - LOG_FOLDER=/var/log/CTFd
+      - ACCESS_LOG=-
+      - ERROR_LOG=-
+      - REVERSE_PROXY=${REVERSE_PROXY:-true}
+
+      # First blood plugin
+      - DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/demo/
+      - DISCORD_WEBHOOK_LIMIT=1
+      - "DISCORD_WEBHOOK_MESSAGE=:drop_of_blood: First blood for **{challenge}** goes to **{user}**! :drop_of_blood:"
+      - DISCORD_WEBHOOK_CHALL=
+
+      # Development
+      - TEMPLATES_AUTO_RELOAD=${TEMPLATES_AUTO_RELOAD:-true}
+
+      # Kube-CTF
+      - KUBECTF_HOST=$KUBECTF_HOST
+      - KUBECTF_SECRET=$KUBECTF_SECRET
+    volumes:
+      - .data/CTFd/logs:/var/log/CTFd
+      - .data/CTFd/uploads:/var/uploads
+      - ./themes/brunnerne:/opt/CTFd/CTFd/themes/brunnerne
+    depends_on:
+      - db
+    networks:
+      default:
+      internal:
+
+  nginx:
+    build:
+      context: ./ctfd-proxy
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - 80:80
+    depends_on:
+      - ctfd
+    networks:
+      default:
+
+  db:
+    image: mariadb:11.4
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      MARIADB_USER: ${DB_USERNAME:-ctfd}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-ctfd}
+      MARIADB_DATABASE: ${DB_NAME:-ctfd}
+      MARIADB_AUTO_UPGRADE: 1
+
+    volumes:
+      - .data/mysql:/var/lib/mysql
+    networks:
+      internal:
+    # This command is required to set important mariadb defaults
+    command:
+      [
+        --character-set-server=utf8mb4,
+        --collation-server=utf8mb4_unicode_ci,
+        --wait_timeout=28800,
+        --log-warnings=0,
+      ]
+
+  cache:
+    image: redis:4
+    restart: always
+    volumes:
+      - .data/redis:/data
+    networks:
+      internal:
+
+networks:
+  default:
+  internal:

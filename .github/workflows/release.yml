@@ -19,3 +19,38 @@ jobs:
     with:
       repository: ctfpilot/ctfd
       ENVIRONMENT: Release
+
+  docker-ctfd:
+    name: Docker build and push CTFd
+    needs:
+      - release
+    uses: ctfpilot/ci/.github/workflows/docker.yml@v1.3.0
+    if: needs.release.outputs.version != '' && needs.release.outputs.version != null
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    with:
+      repository: ctfpilot/ctfd
+      semver: ${{ needs.release.outputs.version }}
+      arguments: |
+        VERSION=${{ needs.release.outputs.version }}
+
+  docker-proxy:
+    name: Docker build and push CTFd-Proxy
+    needs:
+      - release
+    uses: ctfpilot/ci/.github/workflows/docker.yml@v1.3.0
+    if: needs.release.outputs.version != '' && needs.release.outputs.version != null
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    with:
+      repository: ctfpilot/ctfd
+      semver: ${{ needs.release.outputs.version }}
+      arguments: |
+        VERSION=${{ needs.release.outputs.version }}
+      context: ctfd-proxy
+      dockerfile: ctfd-proxy/Dockerfile
+      image_name: ${{ github.repository }}-proxy

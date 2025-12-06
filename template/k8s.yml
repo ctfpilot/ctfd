@@ -1,0 +1,220 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ctfd
+  labels:
+    app.kubernetes.io/part-of: ctfpilot
+    app.kubernetes.io/name: ctfd
+    app.kubernetes.io/version: { .Version }
+    app.kubernetes.io/component: scoreboard
+    ctfpilot.com/component: ctfd
+spec:
+  replicas: 3
+  revisionHistoryLimit: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 50%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      name: ctfd
+  template:
+    metadata:
+      labels:
+        name: ctfd
+    spec:
+      containers:
+        - image: ghcr.io/ctfpilot/ctfd:{ .Version }
+          imagePullPolicy: Always
+          name: ctfd
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "2Gi"
+            limits:
+              cpu: "2000m"
+              memory: "8Gi"
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8000
+            initialDelaySeconds: 120
+            timeoutSeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8000
+            initialDelaySeconds: 30
+            timeoutSeconds: 10
+            periodSeconds: 15
+            failureThreshold: 6
+          startupProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8000
+            initialDelaySeconds: 30
+            timeoutSeconds: 10
+            periodSeconds: 15
+            failureThreshold: 6
+          env:
+            - name: UPLOAD_PROVIDER
+              value: "s3"
+            - name: WORKERS
+              value: "6"
+            - name: SQLALCHEMY_MAX_OVERFLOW
+              value: "200"
+            - name: SQLALCHEMY_POOL_PRE_PING
+              value: "true"
+            - name: ACCESS_LOG
+              value: "-"
+            - name: ERROR_LOG
+              value: "-"
+            - name: REVERSE_PROXY
+              value: "true"
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ctfd-secret
+                  key: secret_key
+            # Database url from secret
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ctfd-db-connection
+                  key: dsn
+            # Redis url from secret
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ctfd-redis-connection
+                  key: url
+            - name: CACHE_REDIS_CLUSTER
+              valueFrom:
+                secretKeyRef:
+                  name: ctfd-redis-connection
+                  key: cluster
+            # Kube-ctf configuration from secret
+            - name: KUBECTF_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: kube-ctf-config
+                  key: host
+            - name: KUBECTF_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: kube-ctf-config
+                  key: secret
+            # First blood plugin configuration
+            - name: DISCORD_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ctfd-discord-webhook
+                  key: url
+            - name: DISCORD_WEBHOOK_LIMIT
+              valueFrom:
+                secretKeyRef:
+                  name: ctfd-discord-webhook
+                  key: limit
+            - name: DISCORD_WEBHOOK_MESSAGE
+              valueFrom:
+                secretKeyRef:
+                  name: ctfd-discord-webhook
+                  key: message
+            - name: DISCORD_WEBHOOK_CHALL
+              value: ""
+            - name: "AWS_ACCESS_KEY_ID"
+              valueFrom:
+                secretKeyRef:
+                  name: ctfd-s3-credentials
+                  key: access_key
+            - name: "AWS_SECRET_ACCESS_KEY"
+              valueFrom:
+                secretKeyRef:
+                  name: ctfd-s3-credentials
+                  key: secret_key
+            - name: "AWS_S3_BUCKET"
+              valueFrom:
+                secretKeyRef:
+                  name: ctfd-s3-credentials
+                  key: bucket
+            - name: "AWS_S3_REGION"
+              valueFrom:
+                secretKeyRef:
+                  name: ctfd-s3-credentials
+                  key: region
+            - name: "AWS_S3_ENDPOINT_URL"
+              valueFrom:
+                secretKeyRef:
+                  name: ctfd-s3-credentials
+                  key: endpoint
+            - name: "AWS_S3_CUSTOM_PREFIX"
+              valueFrom:
+                secretKeyRef:
+                  name: ctfd-s3-credentials
+                  key: custom_prefix
+          ports:
+            - containerPort: 8000
+              name: ctfd
+          volumeMounts:
+            - name: ctfd-logs
+              mountPath: /opt/CTFd/CTFd/logs/
+        - name: filebeat
+          image: docker.elastic.co/beats/filebeat:8.19.0
+          args: ["-c", "/etc/filebeat.yml", "-e"]
+          volumeMounts:
+            - name: ctfd-logs
+              mountPath: /opt/CTFd/CTFd/logs/
+            - name: filebeat-config
+              mountPath: /etc/filebeat.yml
+              subPath: filebeat.yml
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "56M"
+            limits:
+              cpu: "100m"
+              memory: "256M"
+      initContainers:
+        - name: init-ctfd-logs
+          image: busybox:latest
+          command:
+            [
+              "sh",
+              "-c",
+              "mkdir -p /opt/CTFd/CTFd/logs && chmod 777 /opt/CTFd/CTFd/logs",
+            ]
+          volumeMounts:
+            - name: ctfd-logs
+              mountPath: /opt/CTFd/CTFd/logs/
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: dockerconfigjson-github-com
+      volumes:
+        - name: ctfd-logs
+          emptyDir: {}
+        - name: filebeat-config
+          secret:
+            secretName: ctfd-filebeat-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ctfd
+  labels:
+    app.kubernetes.io/part-of: ctfpilot
+    app.kubernetes.io/name: ctfd
+    app.kubernetes.io/version: { .Version }
+    app.kubernetes.io/component: scoreboard
+    ctfpilot.com/component: ctfd
+spec:
+  ports:
+    - port: 80
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: ctfd
+    ctfpilot.com/component: ctfd
+  type: ClusterIP
