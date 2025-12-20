@@ -7,6 +7,15 @@ This includes deployment configurations, plugins and other customizations, custo
 
 This configuration currently runs on CTFd version `3.7.7`.
 
+## Git submodules
+
+This repository uses Git submodules to include CTFd plugins and themes.  
+After cloning the repository, run the following command to initialize and update all submodules:
+
+```bash
+git submodule update --init --recursive
+```
+
 ## Guides
 
 ### How to add new CTFd plugins
