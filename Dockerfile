@@ -47,6 +47,3 @@ ARG DEVELOPMENT=false
 RUN if [ "$DEVELOPMENT" = "true" ]; then \
     sed -i '30d' /opt/CTFd/CTFd/utils/__init__.py; \
     fi
-
-# Overwrite /opt/CTFd/CTFd with the contents from CTFd
-COPY CTFd /opt/CTFd/CTFd
