@@ -17,7 +17,7 @@ RUN for theme in /tmp/themes/*; do \
     done;
 
 
-FROM ghcr.io/ctfd/ctfd:3.7.7 as ctfd
+FROM ghcr.io/ctfd/ctfd:3.8.6 as ctfd
 
 # Copy plugins from the repository into the image
 COPY plugins /tmp/plugins
@@ -45,5 +45,5 @@ COPY --from=theme-builder /tmp/themes /opt/CTFd/CTFd/themes
 # Delete line 30 of /opt/CTFd/CTFd/utils/__init__.py in order to smooth development of themes (cache of assets)
 ARG DEVELOPMENT=false
 RUN if [ "$DEVELOPMENT" = "true" ]; then \
-    sed -i '30d' /opt/CTFd/CTFd/utils/__init__.py; \
+    sed -i '31d' /opt/CTFd/CTFd/utils/__init__.py; \
     fi

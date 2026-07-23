@@ -5,7 +5,7 @@ This includes deployment configurations, plugins and other customizations, custo
 
 ## CTFd Version
 
-This configuration currently runs on CTFd version `3.7.7`.
+This configuration currently runs on CTFd version `3.8.6`.
 
 ## Git submodules
 
