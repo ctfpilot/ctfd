@@ -101,7 +101,7 @@ services:
       db:
 
   cache:
-    image: redis:4
+    image: redis:8
     restart: unless-stopped
     volumes:
       - .data/redis:/data
