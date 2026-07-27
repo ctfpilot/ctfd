@@ -5,7 +5,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: ctfpilot
     app.kubernetes.io/name: ctfd
-    app.kubernetes.io/version: 1.0.1
+    app.kubernetes.io/version: 2.0.0-r.1
     app.kubernetes.io/component: scoreboard
     ctfpilot.com/component: ctfd
 spec:
@@ -25,12 +25,12 @@ spec:
       labels:
         app.kubernetes.io/part-of: ctfpilot
         app.kubernetes.io/name: ctfd
-        app.kubernetes.io/version: 1.0.1
+        app.kubernetes.io/version: 2.0.0-r.1
         app.kubernetes.io/component: scoreboard
         ctfpilot.com/component: ctfd
     spec:
       containers:
-        - image: ghcr.io/ctfpilot/ctfd:1.0.1
+        - image: ghcr.io/ctfpilot/ctfd:2.0.0-r.1
           imagePullPolicy: Always
           name: ctfd
           resources:
@@ -96,11 +96,6 @@ spec:
                 secretKeyRef:
                   name: ctfd-redis-connection
                   key: url
-            - name: CACHE_REDIS_CLUSTER
-              valueFrom:
-                secretKeyRef:
-                  name: ctfd-redis-connection
-                  key: cluster
             # Kube-ctf configuration from secret
             - name: KUBECTF_HOST
               valueFrom:
@@ -211,7 +206,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: ctfpilot
     app.kubernetes.io/name: ctfd
-    app.kubernetes.io/version: 1.0.1
+    app.kubernetes.io/version: 2.0.0-r.1
     app.kubernetes.io/component: scoreboard
     ctfpilot.com/component: ctfd
 spec:
