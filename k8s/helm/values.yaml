@@ -139,8 +139,6 @@ filebeat:
     pullPolicy: Always
     tag: "8.19.19"
 
-  args: ["-c", "/etc/filebeat.yml", "-e"]
-
   config:
     mountPath: /etc/filebeat.yml
     subPath: filebeat.yml

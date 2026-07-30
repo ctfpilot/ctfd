@@ -146,7 +146,7 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.filebeat.image.repository }}:{{ .Values.filebeat.image.tag }}"
           imagePullPolicy: {{ .Values.filebeat.image.pullPolicy }}
-          args: {{ .Values.filebeat.args }}
+          args: ["-c", "/etc/filebeat.yml", "-e"]
           volumeMounts:
             - name: {{ .Values.volumes.ctfd.logs.name }}
               mountPath: {{ .Values.ctfd.logs.path }}
