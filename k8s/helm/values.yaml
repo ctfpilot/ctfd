@@ -123,13 +123,12 @@ ctfd:
     failureThreshold: 6
 
   resources:
+    requests:
+      cpu: "100m"
+      memory: "512Mi"
     limits:
-      requests:
-        cpu: "100m"
-        memory: "512Mi"
-      limits:
-        cpu: "1000m"
-        memory: "2Gi"
+      cpu: "1000m"
+      memory: "2Gi"
 
 filebeat:
   enabled: true
@@ -147,13 +146,12 @@ filebeat:
     subPath: filebeat.yml
 
   resources:
+    requests:
+      cpu: "10m"
+      memory: "56M"
     limits:
-      requests:
-        cpu: "10m"
-        memory: "56M"
-      limits:
-        cpu: "100m"
-        memory: "256M"
+      cpu: "100m"
+      memory: "256M"
 
 initContainer:
   enabled: true
