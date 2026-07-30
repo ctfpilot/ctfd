@@ -30,7 +30,7 @@
         [
             "@semantic-release/exec",
             {
-                "prepareCmd": "echo ${nextRelease.version} > version.txt && cp template/k8s.yml k8s/k8s.yml && sed -i 's/{ .Version }/${nextRelease.version}/g' k8s/k8s.yml",
+                "prepareCmd": "echo ${nextRelease.version} > version.txt && cp template/k8s.yml k8s/k8s.yml && sed -i 's/{ .Version }/${nextRelease.version}/g' k8s/k8s.yml && cp template/Chart.yaml k8s/helm/Chart.yaml && sed -i 's/{ .Version }/${nextRelease.version}/g' k8s/helm/Chart.yaml",
                 "publishCmd": "echo 'Published version ${nextRelease.version}'"
             }
         ],

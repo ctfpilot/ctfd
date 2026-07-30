@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ctfd
+description: CTF Pilots CTFd helm chart
+type: application
+version: "{ .Version }"
+appVersion: "{ .Version }"

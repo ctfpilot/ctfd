@@ -1,0 +1,187 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ctfd.fullname" . }}
+  labels:
+    {{- include "ctfd.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 50%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      {{- include "ctfd.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "ctfd.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      restartPolicy: Always
+      containers:
+        - name: {{ .Values.ctfd.name | trunc 63 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.ctfd.image.repository }}:{{ .Values.ctfd.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.ctfd.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.ctfd.ports.port }}
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.ctfd.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.ctfd.readinessProbe | nindent 12 }}
+          startupProbe:
+            {{- toYaml .Values.ctfd.startupProbe | nindent 12 }}
+          env:
+            {{- range $key, $value := .Values.ctfd.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ctfd.secrets.secretKey.name }}
+                  key: {{ .Values.ctfd.secrets.secretKey.key }}
+            # Database url from secret
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ctfd.secrets.databaseUrl.name }}
+                  key: {{ .Values.ctfd.secrets.databaseUrl.key }}
+            # Redis url from secret
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ctfd.secrets.redisUrl.name }}
+                  key: {{ .Values.ctfd.secrets.redisUrl.key }}
+            # Kube-ctf configuration from secret
+            {{- if .Values.ctfd.kubectf.enabled }}
+            - name: KUBECTF_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ctfd.kubectf.secrets.host.name }}
+                  key: {{ .Values.ctfd.kubectf.secrets.host.key }}
+            - name: KUBECTF_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ctfd.kubectf.secrets.secret.name }}
+                  key: {{ .Values.ctfd.kubectf.secrets.secret.key }}
+            {{- end }}
+            # First blood plugin configuration
+            {{- if .Values.ctfd.discordWebhook.enabled }}
+            - name: DISCORD_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ctfd.discordWebhook.secrets.url.name }}
+                  key: {{ .Values.ctfd.discordWebhook.secrets.url.key }}
+            - name: DISCORD_WEBHOOK_LIMIT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ctfd.discordWebhook.secrets.limit.name }}
+                  key: {{ .Values.ctfd.discordWebhook.secrets.limit.key }}
+            - name: DISCORD_WEBHOOK_MESSAGE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ctfd.discordWebhook.secrets.message.name }}
+                  key: {{ .Values.ctfd.discordWebhook.secrets.message.key }}
+            {{- end }}
+            - name: DISCORD_WEBHOOK_CHALL
+              value: ""
+            {{- if .Values.ctfd.s3Storage.enabled }}
+            - name: "AWS_ACCESS_KEY_ID"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ctfd.s3Storage.secrets.accessKeyId.name }}
+                  key: {{ .Values.ctfd.s3Storage.secrets.accessKeyId.key }}
+            - name: "AWS_SECRET_ACCESS_KEY"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ctfd.s3Storage.secrets.secretAccessKey.name }}
+                  key: {{ .Values.ctfd.s3Storage.secrets.secretAccessKey.key }}
+            - name: "AWS_S3_BUCKET"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ctfd.s3Storage.secrets.bucketName.name }}
+                  key: {{ .Values.ctfd.s3Storage.secrets.bucketName.key }}
+            - name: "AWS_S3_REGION"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ctfd.s3Storage.secrets.region.name }}
+                  key: {{ .Values.ctfd.s3Storage.secrets.region.key }}
+            - name: "AWS_S3_ENDPOINT_URL"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ctfd.s3Storage.secrets.url.name }}
+                  key: {{ .Values.ctfd.s3Storage.secrets.url.key }}
+            - name: "AWS_S3_CUSTOM_PREFIX"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ctfd.s3Storage.secrets.prefix.name }}
+                  key: {{ .Values.ctfd.s3Storage.secrets.prefix.key }}
+            {{- end }}
+          volumeMounts:
+            - name: {{ .Values.volumes.ctfd.logs.name }}
+              mountPath: {{ .Values.ctfd.logs.path }}
+          resources:
+            {{- toYaml .Values.ctfd.resources | nindent 12 }}
+        - name: {{ .Values.filebeat.name | trunc 63 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.filebeat.image.repository }}:{{ .Values.filebeat.image.tag }}"
+          imagePullPolicy: {{ .Values.filebeat.image.pullPolicy }}
+          args: {{ .Values.filebeat.args }}
+          volumeMounts:
+            - name: {{ .Values.volumes.ctfd.logs.name }}
+              mountPath: {{ .Values.ctfd.logs.path }}
+            - name: {{ .Values.volumes.filebeat.config.name }}
+              mountPath: {{ .Values.filebeat.config.mountPath }}
+              subPath: {{ .Values.filebeat.config.subPath }}
+          resources:
+            {{- toYaml .Values.filebeat.resources | nindent 12 }}
+      initContainers:
+        - name: init-{{ .Values.volumes.ctfd.logs.name }}
+          image: busybox:latest
+          command:
+            [
+              "sh",
+              "-c",
+              "mkdir -p {{ .Values.ctfd.logs.path }} && chmod 777 {{ .Values.ctfd.logs.path }}",
+            ]
+          volumeMounts:
+            - name: {{ .Values.volumes.ctfd.logs.name }}
+              mountPath: {{ .Values.ctfd.logs.path }}
+      volumes:
+        - name: {{ .Values.volumes.ctfd.logs.name }}
+          emptyDir: {{ .Values.volumes.ctfd.logs.emptyDir | default "{}" }}
+        - name: {{ .Values.volumes.filebeat.config.name }}
+          secret:
+            secretName: {{ .Values.volumes.filebeat.config.secret.secretName }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

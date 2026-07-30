@@ -1,0 +1,201 @@
+# Default values for ctfd.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 1
+revisionHistoryLimit: 3
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+ctfd:
+  name: ctfd
+
+  image:
+    repository: ghcr.io/ctfpilot/ctfd
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    # tag: "1.0.0"
+
+  ports:
+    port: 8000
+
+  env:
+    UPLOAD_PROVIDER: "s3"
+    WORKERS: "3"
+    SQLALCHEMY_MAX_OVERFLOW: "200"
+    SQLALCHEMY_POOL_PRE_PING: "true"
+    ACCESS_LOG: "-"
+    ERROR_LOG: "-"
+    REVERSE_PROXY: "true"
+
+  logs:
+    path: /opt/CTFd/CTFd/logs/
+
+  # Name and key pairs for secrets for sensitive data like SECRET_KEY and DATABASE_URL.
+  # These secrets must be created in the same namespace as the CTFd deployment.
+  secrets:
+    secretKey:
+      name: ctfd-secret
+      key: secret_key
+    databaseUrl:
+      name: ctfd-db-connection
+      key: dsn
+    redisUrl:
+      name: ctfd-redis-connection
+      key: url
+
+  kubectf:
+    enabled: true
+    secrets:
+      host:
+        name: kube-ctf-config
+        key: host
+      secret:
+        name: kube-ctf-config
+        key: secret
+
+  discordWebhook:
+    enabled: true
+    secrets:
+      url:
+        name: ctfd-discord-webhook
+        key: url
+      limit:
+        name: ctfd-discord-webhook
+        key: limit
+      message:
+        name: ctfd-discord-webhook
+        key: message
+
+  s3Storage:
+    enabled: true
+    secrets:
+      accessKeyId:
+        name: ctfd-s3-credentials
+        key: access_key
+      secretAccessKey:
+        name: ctfd-s3-credentials
+        key: secret_key
+      bucketName:
+        name: ctfd-s3-credentials
+        key: bucket
+      region:
+        name: ctfd-s3-credentials
+        key: region
+      url:
+        name: ctfd-s3-credentials
+        key: endpoint
+      prefix:
+        name: ctfd-s3-credentials
+        key: custom_prefix
+
+  livenessProbe:
+    httpGet:
+      path: /healthcheck
+      port: 8000
+    initialDelaySeconds: 120
+    timeoutSeconds: 10
+    periodSeconds: 15
+    failureThreshold: 3
+  readinessProbe:
+    httpGet:
+      path: /healthcheck
+      port: 8000
+    initialDelaySeconds: 30
+    timeoutSeconds: 10
+    periodSeconds: 15
+    failureThreshold: 6
+  startupProbe:
+    httpGet:
+      path: /healthcheck
+      port: 8000
+    initialDelaySeconds: 30
+    timeoutSeconds: 10
+    periodSeconds: 15
+    failureThreshold: 6
+
+  resources:
+    limits:
+      requests:
+        cpu: "100m"
+        memory: "512Mi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+
+filebeat:
+  enabled: true
+  name: filebeat
+
+  image:
+    repository: docker.elastic.co/beats/filebeat
+    pullPolicy: Always
+    tag: "8.19.19"
+
+  args: ["-c", "/etc/filebeat.yml", "-e"]
+
+  config:
+    mountPath: /etc/filebeat.yml
+    subPath: filebeat.yml
+
+  resources:
+    limits:
+      requests:
+        cpu: "10m"
+        memory: "56M"
+      limits:
+        cpu: "100m"
+        memory: "256M"
+
+initContainer:
+  enabled: true
+  name: init-ctfd-logs
+  image:
+    repository: busybox
+    pullPolicy: IfNotPresent
+    tag: latest
+
+volumes:
+  ctfd:
+    logs:
+      name: ctfd-logs
+      emptyDir: {}
+  filebeat:
+    config:
+      name: filebeat-config
+      secret:
+        secretName: ctfd-filebeat-config
+
+imagePullSecrets:
+  - name: dockerconfigjson-github-com
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
