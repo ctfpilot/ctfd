@@ -2,5 +2,5 @@ apiVersion: v2
 name: ctfd
 description: CTF Pilots CTFd helm chart
 type: application
-version: "1.0.1"
-appVersion: "1.0.1"
+version: "2.0.0-r.1"
+appVersion: "2.0.0-r.1"
