@@ -34,7 +34,7 @@ ctfd:
     SQLALCHEMY_POOL_PRE_PING: "true"
     ACCESS_LOG: "-"
     ERROR_LOG: "-"
-    REVERSE_PROXY: "true"
+    REVERSE_PROXY: "2,2,2,2,2" # Allow Cloudflare and Traefik proxies (2 hops). Set to true or 1,1,1,1,1 if you are not using Cloudflare or similar proxy.
 
   logs:
     path: /opt/CTFd/CTFd/logs/
