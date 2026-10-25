@@ -78,7 +78,7 @@ services:
       ]
 
   cache:
-    image: redis:4
+    image: redis:8
     restart: always
     volumes:
       - .data/redis:/data
